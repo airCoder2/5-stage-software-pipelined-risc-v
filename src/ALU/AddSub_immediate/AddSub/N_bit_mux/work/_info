@@ -1,0 +1,156 @@
+m255
+K4
+z2
+!s12c _opt
+Z0 !s99 nomlopt
+!s11e vcom 2025.1_2 2025.04, Apr  7 2025
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z1 d/home/umhaihl/cpre_381/lab1/lab_folders/Lab1/Mux/N_bit_mux
+T_opt
+!s110 1769834235
+VagRZMbZz_^>XJ?B1LN`Az3
+04 20 9 work tb_mux2t1_n_dataflow testbench 1
+=1-000ae431a4f1-697d86fb-485a6-46c1
+R0
+!s12f OEM100
+!s12b OEM100
+!s124 OEM100
+!s135 nogc
+o-quiet -auto_acc_if_foreign -work work +acc
+tCvgOpt 0
+n@_opt
+OL;O;2025.1_2;82
+Emux2t1_dataflow
+Z2 w1769834067
+Z3 DPx3 std 6 textio 0 22 zE1`LPoLg^DX3Oz^4Fj1K3
+Z4 DPx4 ieee 14 std_logic_1164 0 22 cVAk:aDinOX8^VGI1ekP<3
+!i122 0
+R1
+Z5 8mux2t1_dataflow.vhd
+Z6 Fmux2t1_dataflow.vhd
+l0
+L15 1
+V54:lN1IJFhj9=z]PVjMI[0
+!s100 6f[J3LV1>44MBcI>`ja][0
+Z7 OL;C;2025.1_2;82
+33
+Z8 !s110 1769834223
+!i10b 1
+Z9 !s108 1769834223.000000
+Z10 !s90 -reportprogress|300|-2008|mux2t1_N_dataflow.vhd|mux2t1_dataflow.vhd|tb_mux2t1_N_dataflow.vhd|
+Z11 !s107 tb_mux2t1_N_dataflow.vhd|mux2t1_dataflow.vhd|mux2t1_N_dataflow.vhd|
+!i113 0
+Z12 o-2008
+Z13 tExplicit 1 CvgOpt 0
+Adataflow
+R3
+R4
+DEx4 work 15 mux2t1_dataflow 0 22 54:lN1IJFhj9=z]PVjMI[0
+!i122 0
+l23
+L22 8
+V6V2GHHKW5RnYY6KVodbC?3
+!s100 =BBE[?ma6GeDO2YW[GG<[3
+R7
+33
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+R13
+Emux2t1_n_dataflow
+Z14 w1769834121
+R3
+R4
+!i122 0
+R1
+Z15 8mux2t1_N_dataflow.vhd
+Z16 Fmux2t1_N_dataflow.vhd
+l0
+L18 1
+VoEY30U69<XMB7EBESEO_o0
+!s100 KDQOMlPHoBPiokhjE_72E1
+R7
+33
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+R13
+Astructural
+R3
+R4
+DEx4 work 17 mux2t1_n_dataflow 0 22 oEY30U69<XMB7EBESEO_o0
+!i122 0
+l36
+L27 21
+V72RLZjKfO2MIj@ULFk3b12
+!s100 Y=19^l_EnQl@;jN91g2_82
+R7
+33
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+R13
+Etb_mux2t1_n_dataflow
+R2
+Z17 DPx4 ieee 11 numeric_std 0 22 aU^R8eGcicLcUFIaBQSL>3
+Z18 DPx3 std 3 env 0 22 g[fj8WJKOa<0Y`zWY3UD70
+Z19 DPx4 ieee 16 std_logic_textio 0 22 8]8<fKiYoHe;_IDO3kmNH2
+R3
+R4
+!i122 0
+R1
+Z20 8tb_mux2t1_N_dataflow.vhd
+Z21 Ftb_mux2t1_N_dataflow.vhd
+l0
+L21 1
+Vf:=h9dDF=PC[3R6AQ0ihX0
+!s100 GA2z>ma>:Eg?>cTWGCET90
+R7
+33
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+R13
+Atestbench
+R17
+R18
+R19
+R3
+R4
+DEx4 work 20 tb_mux2t1_n_dataflow 0 22 f:=h9dDF=PC[3R6AQ0ihX0
+!i122 0
+l37
+L25 49
+VDX8oDmKKU1OQNL;N<BzA90
+!s100 E]PCG@cFS^RWH3?Pe`J5W1
+R7
+33
+R8
+!i10b 1
+R9
+R10
+R11
+!i113 0
+R12
+R13
