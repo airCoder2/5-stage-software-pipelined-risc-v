@@ -45,6 +45,7 @@ package RISCV_types is
         Extended_imm  : std_logic_vector(31 downto 0);
         func3         : std_logic_vector(2 downto 0);
         func7_5       : std_logic;
+        halt          : std_logic;
     end record Decode_execute_data_t;
 
     type Execute_memory_data_t is record
@@ -64,6 +65,7 @@ package RISCV_types is
         reg_write_sel : std_logic_vector(4 downto 0); -- rd
         reg_data_2     : std_logic_vector(31 downto 0);
         func3          : std_logic_vector(2 downto 0);
+        halt          : std_logic;
     end record Execute_memory_data_t;
 
 
@@ -73,6 +75,7 @@ package RISCV_types is
         ALU_out        : std_logic_vector(31 downto 0);
         reg_write_sel : std_logic_vector(4 downto 0); -- rd
         dmem_out       : std_logic_vector(31 downto 0);
+        halt          : std_logic;
     end record Memory_wback_data_t;
 
 end package RISCV_types;

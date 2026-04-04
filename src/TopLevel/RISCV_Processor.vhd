@@ -256,6 +256,7 @@ architecture structure of RISCV_Processor is
 
 
 begin
+    s_Halt      <= s_MEM_WB_output.halt;
     s_Ovfl <= '0'; -- RISC-V does not have hardware overflow detection.
     s_stall <= '0'; -- for software pipelined
 
@@ -270,7 +271,7 @@ begin
 
     s_PC        <= s_IF_ID_input.PC; -- instruction memory address input.
     s_Inst      <= s_IF_ID_input.Inst; -- instruction signal 
-    oALUOut <= s_EX_MEM_input.ALU_out;
+    oALUOut     <= s_EX_MEM_input.ALU_out;
 
     -- multiplex the instruction mem address. if instructon memeory is being written then connect
     -- the address that toolflow controls, otherwise coneect the s_PC, which is current pc
@@ -370,7 +371,7 @@ begin
                  o_branch      => s_ID_EX_input.branch, 
                  o_jal         => s_ID_EX_input.jal, 
                  o_jalr        => s_ID_EX_input.jalr,
-                 o_halt        => s_Halt
+                 o_halt        => s_ID_EX_input.halt
             );
 
     -- Register file
@@ -486,6 +487,7 @@ begin
     s_EX_MEM_input.ALU_mem       <= s_ID_EX_output.ALU_mem;
     s_EX_MEM_input.func3         <= s_ID_EX_output.func3;
     s_EX_MEM_input.reg_write_sel <= s_ID_EX_output.reg_write_sel;
+    s_EX_MEM_input.halt          <= s_ID_EX_output.halt;
 
 
     -- Decision box for deciding if should branch or no
@@ -527,6 +529,7 @@ begin
     s_MEM_WB_input.ALU_mem       <= s_EX_MEM_output.ALU_mem;
     s_MEM_WB_input.reg_WE        <= s_EX_MEM_output.reg_WE;
     s_MEM_WB_input.reg_write_sel <= s_EX_MEM_output.reg_write_sel;
+    s_MEM_WB_input.halt          <= s_EX_MEM_output.halt;
 
 
     -- Either write ALU_out or Mem_out to register file

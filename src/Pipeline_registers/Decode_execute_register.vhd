@@ -27,9 +27,9 @@ architecture structural of Decode_Execute_register is
     end component N_bit_register;   
 
     -- decode/execute stage register
-    -- 143 bits total:
-    signal s_Decode_execute_data_in  : std_logic_vector(147 downto 0);   
-    signal s_Decode_execute_data_out : std_logic_vector(147 downto 0);   
+    -- 149 bits total:
+    signal s_Decode_execute_data_in  : std_logic_vector(148 downto 0);   
+    signal s_Decode_execute_data_out : std_logic_vector(148 downto 0);   
 
 begin
 
@@ -50,6 +50,7 @@ begin
     -- Inst    : func3(3 bits)          (141 downto 139)
     -- Inst    : func7_5                (142)
     -- ADDR    : reg_write_sel          (147 downto 143)
+    -- Control : halt                   (148)
     s_Decode_execute_data_in(0)              <=  i_decode_execute_register.reg_WE;
     s_Decode_execute_data_in(1)              <=  i_decode_execute_register.branch;
     s_Decode_execute_data_in(2)              <=  i_decode_execute_register.jal;
@@ -67,10 +68,12 @@ begin
     s_Decode_execute_data_in(141 downto 139) <=  i_decode_execute_register.func3;
     s_Decode_execute_data_in(142)            <=  i_decode_execute_register.func7_5;
     s_Decode_execute_data_in(147 downto 143) <=  i_decode_execute_register.reg_write_sel;
+    s_Decode_execute_data_in(148)            <=  i_decode_execute_register.halt;
+
 
 
     Decode_execute_register_inst: N_bit_register
-        generic map(N => 148, Reset_value => (147 downto 0 => '0'))
+        generic map(N => 149, Reset_value => (148 downto 0 => '0'))
         port map(
                  i_CLK => i_clk,
                  i_RST => i_reset,                  -- reset the pipeline to 0
@@ -97,6 +100,6 @@ begin
    o_decode_execute_register.func3         <= s_Decode_execute_data_out(141 downto 139); 
    o_decode_execute_register.func7_5       <= s_Decode_execute_data_out(142);            
    o_decode_execute_register.reg_write_sel <= s_Decode_execute_data_out(147 downto 143);            
-
+   o_decode_execute_register.halt          <= s_Decode_execute_data_out(148);            
 
 end architecture structural;

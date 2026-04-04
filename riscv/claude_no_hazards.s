@@ -1,23 +1,272 @@
-lui   x1,  0x10        # x1 = 0x10000
-lui   x2,  0x20        # x2 = 0x20000
-lui   x3,  0x30        # x3 = 0x30000
-lui   x4,  0x40        # x4 = 0x40000  <- x1 now safe to read
-add   x5,  x1, x2      # x5 = x1 + x2
-addi  x6,  x0, 100     # x6 = 100
-addi  x7,  x0, 200     # x7 = 200
-sub   x8,  x3, x4      # x8 = x3 - x4  <- x5 now safe to read
-and   x9,  x5, x6      # x9 = x5 & x6
-addi  x10, x0, 50      # x10 = 50
-addi  x11, x0, 75      # x11 = 75
-or    x12, x7, x8      # x12 = x7 | x8  <- x9 now safe to read
-xor   x13, x9, x10     # x13 = x9 ^ x10
-addi  x14, x0, 10      # x14 = 10
-addi  x15, x0, 20      # x15 = 20
-sll   x16, x6, x11     # x16 = x6 << x11 <- x13 now safe to read
-sw    x13, 0(x1)       # mem[x1] = x13
-addi  x17, x0, 1       # filler
-addi  x18, x0, 2       # filler
-lw    x19, 0(x1)       # x19 = mem[x1]  (3 cycles after sw)
-srl   x20, x16, x14    # x20 = x16 >> x14o
-wfi
+.text
+.globl main
 
+main:
+
+########################
+# INIT
+########################
+addi x1, x0, 8
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+addi x2, x0, 3
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# U-TYPE
+########################
+lui x3, 0x12345
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+auipc x4, 0
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# ALU
+########################
+add x5, x1, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+sub x6, x5, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+and x7, x5, x6
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+or x8, x6, x7
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+xor x9, x7, x8
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# IMMEDIATE
+########################
+andi x10, x9, 7
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+ori x11, x10, 4
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+xori x12, x11, 2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# COMPARE
+########################
+slt x13, x2, x1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+sltu x14, x1, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+slti x15, x1, 10
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+sltiu x16, x2, 5
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# SHIFTS
+########################
+sll x17, x1, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+srl x18, x17, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+sra x19, x18, x2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+slli x20, x1, 1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+srli x21, x20, 1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+srai x22, x21, 1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# MEMORY BASE
+########################
+lui x23, 0x10010
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+addi x23, x23, 0
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# STORE
+########################
+sw x5, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# LOADS
+########################
+lw x24, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+lb x25, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+lh x26, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+lbu x27, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+lhu x28, 0(x23)
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# BRANCHES
+########################
+beq x24, x5, L1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+bne x24, x5, L2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+blt x2, x1, L3
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+bge x1, x2, L4
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+bltu x2, x1, L5
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+bgeu x1, x2, L6
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# JUMPS
+########################
+jal x29, J1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+J1:
+jalr x30, x29, 0
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# LABEL TARGETS
+########################
+L1:
+addi x0, x0, 1
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+L2:
+addi x0, x0, 2
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+L3:
+addi x0, x0, 3
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+L4:
+addi x0, x0, 4
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+L5:
+addi x0, x0, 5
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+L6:
+addi x0, x0, 6
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+
+########################
+# END
+########################
+wfi

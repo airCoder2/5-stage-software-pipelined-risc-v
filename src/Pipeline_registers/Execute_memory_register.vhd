@@ -27,9 +27,9 @@ architecture structural of Execute_memory_register is
     end component N_bit_register;   
 
     -- execute/memory stage register
-    -- 110 bits total:
-    signal s_Execute_memory_data_in  : std_logic_vector(114 downto 0);   
-    signal s_Execute_memory_data_out : std_logic_vector(114 downto 0);   
+    -- 116 bits total:
+    signal s_Execute_memory_data_in  : std_logic_vector(115 downto 0);   
+    signal s_Execute_memory_data_out : std_logic_vector(115 downto 0);   
 
 begin
 
@@ -49,6 +49,7 @@ begin
     -- DATA    : read 2 (32 bits)       (106 downto 75)
     -- Inst    : func3 (3 bits)         (109 downto 107)
     -- ADDR:   : reg_write_sel(5 bits)  (114 downto 110)
+    -- Control : halt                   (115)
 
     s_Execute_memory_data_in(0)              <= i_execute_memory_register.reg_WE;          
     s_Execute_memory_data_in(1)              <= i_execute_memory_register.branch;        
@@ -66,10 +67,11 @@ begin
     s_Execute_memory_data_in(106 downto 75)  <= i_execute_memory_register.reg_data_2;
     s_Execute_memory_data_in(109 downto 107) <= i_execute_memory_register.func3;
     s_Execute_memory_data_in(114 downto 110) <= i_execute_memory_register.reg_write_sel;
+    s_Execute_memory_data_in(115)            <= i_execute_memory_register.halt;
 
 
     Execute_memory_register_inst: N_bit_register
-        generic map(N => 115, Reset_value => (114 downto 0 => '0'))
+        generic map(N => 116, Reset_value => (115 downto 0 => '0'))
         port map(
                  i_CLK => i_clk,
                  i_RST => i_reset,                  -- reset the pipeline to 0
@@ -93,5 +95,6 @@ begin
     o_execute_memory_register.reg_data_2    <= s_Execute_memory_data_out(106 downto 75); 
     o_execute_memory_register.func3         <= s_Execute_memory_data_out(109 downto 107); 
     o_execute_memory_register.reg_write_sel <= s_Execute_memory_data_out(114 downto 110);
+    o_execute_memory_register.halt          <= s_Execute_memory_data_out(115);
 
 end architecture structural;
