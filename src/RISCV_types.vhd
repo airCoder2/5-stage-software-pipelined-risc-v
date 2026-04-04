@@ -28,7 +28,7 @@ package RISCV_types is
     end record Fetch_decode_data_t;
 
     type Decode_execute_data_t is record
-        RegWr         : std_logic; -- reg write enable
+        reg_WE        : std_logic; -- reg write enable
         branch        : std_logic;
         jal           : std_logic;     
         jalr          : std_logic;
@@ -37,42 +37,40 @@ package RISCV_types is
         ALU_A_src     : std_logic;
         ALU_op        : std_logic_vector(1 downto 0);
         lui           : std_logic;                    
-        DMemWr        : std_logic; --mem write enable 
+        mem_WE        : std_logic; --mem write enable 
         PC            : std_logic_vector(31 downto 0);
-        DATA_TO_READ1 : std_logic_vector(31 downto 0);
-        DATA_TO_READ2 : std_logic_vector(31 downto 0);
+        reg_data_1    : std_logic_vector(31 downto 0);
+        reg_data_2    : std_logic_vector(31 downto 0);
         Extended_imm  : std_logic_vector(31 downto 0);
         func3         : std_logic_vector(2 downto 0);
         func7_5       : std_logic;
     end record Decode_execute_data_t;
 
     type Execute_memory_data_t is record
-        RegWr          : std_logic;  -- reg write enabl
+        reg_WE         : std_logic;  -- reg write enabl
         branch         : std_logic;
         jal            : std_logic;
         jalr           : std_logic;
         ALU_mem        : std_logic;
-        DMemWr         : std_logic;  -- mem write enable
+        mem_WE         : std_logic;  -- mem write enable
         Alu_eq         : std_logic; 
         Alu_lt         : std_logic; 
         Alu_ltu        : std_logic; 
-        Alu_get        : std_logic; 
+        Alu_ge         : std_logic; 
         Alu_geu        : std_logic; 
-        PC             : std_logic_vector(31 downto 0);
+        branch_PC      : std_logic_vector(31 downto 0);
         ALU_out        : std_logic_vector(31 downto 0);
-        DATA_TO_READ2  : std_logic_vector(31 downto 0);
+        reg_data_2     : std_logic_vector(31 downto 0);
         func3          : std_logic_vector(2 downto 0);
     end record Execute_memory_data_t;
 
 
     type Memory_wback_data_t is record
-        RegWr          : std_logic;  -- reg write enable
+        reg_WE         : std_logic;  -- reg write enable
         ALU_mem        : std_logic;
         ALU_out        : std_logic_vector(31 downto 0);
-        DMemOut        : std_logic_vector(31 downto 0);
+        dmem_out       : std_logic_vector(31 downto 0);
     end record Memory_wback_data_t;
 
 end package RISCV_types;
-
-
 
