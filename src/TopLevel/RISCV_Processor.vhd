@@ -1,7 +1,7 @@
 -- Date        : April 2, 2026
 -- File        : RISCV_Processor.vhd     
 -- Designer    : Salah Nasriddinov
--- Description : This file implements a single cycle risc-v processor 
+-- Description : This file implements a software pipelined risc-v processor. Doesn't handle any type of hazards.
 
 
 library IEEE;
