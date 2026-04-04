@@ -39,6 +39,7 @@ package RISCV_types is
         lui           : std_logic;                    
         mem_WE        : std_logic; --mem write enable 
         PC            : std_logic_vector(31 downto 0);
+        reg_write_sel : std_logic_vector(4 downto 0); -- rd
         reg_data_1    : std_logic_vector(31 downto 0);
         reg_data_2    : std_logic_vector(31 downto 0);
         Extended_imm  : std_logic_vector(31 downto 0);
@@ -60,6 +61,7 @@ package RISCV_types is
         Alu_geu        : std_logic; 
         branch_PC      : std_logic_vector(31 downto 0);
         ALU_out        : std_logic_vector(31 downto 0);
+        reg_write_sel : std_logic_vector(4 downto 0); -- rd
         reg_data_2     : std_logic_vector(31 downto 0);
         func3          : std_logic_vector(2 downto 0);
     end record Execute_memory_data_t;
@@ -69,6 +71,7 @@ package RISCV_types is
         reg_WE         : std_logic;  -- reg write enable
         ALU_mem        : std_logic;
         ALU_out        : std_logic_vector(31 downto 0);
+        reg_write_sel : std_logic_vector(4 downto 0); -- rd
         dmem_out       : std_logic_vector(31 downto 0);
     end record Memory_wback_data_t;
 

@@ -28,8 +28,8 @@ architecture structural of Execute_memory_register is
 
     -- execute/memory stage register
     -- 110 bits total:
-    signal s_Execute_memory_data_in  : std_logic_vector(109 downto 0);   
-    signal s_Execute_memory_data_out : std_logic_vector(109 downto 0);   
+    signal s_Execute_memory_data_in  : std_logic_vector(114 downto 0);   
+    signal s_Execute_memory_data_out : std_logic_vector(114 downto 0);   
 
 begin
 
@@ -48,28 +48,28 @@ begin
     -- DATA    : ALU_out (32 bits)      (74 downto 43)
     -- DATA    : read 2 (32 bits)       (106 downto 75)
     -- Inst    : func3 (3 bits)         (109 downto 107)
+    -- ADDR:   : reg_write_sel(5 bits)  (114 downto 110)
 
-    s_Execute_memory_data_in(0)              <= i_execute_memory_register.RegWr;          
+    s_Execute_memory_data_in(0)              <= i_execute_memory_register.reg_WE;          
     s_Execute_memory_data_in(1)              <= i_execute_memory_register.branch;        
     s_Execute_memory_data_in(2)              <= i_execute_memory_register.jal;            
     s_Execute_memory_data_in(3)              <= i_execute_memory_register.jalr;           
     s_Execute_memory_data_in(4)              <= i_execute_memory_register.ALU_mem;        
-    s_Execute_memory_data_in(5)              <= i_execute_memory_register.DMemWr;         
+    s_Execute_memory_data_in(5)              <= i_execute_memory_register.mem_WE;         
     s_Execute_memory_data_in(6)              <= i_execute_memory_register.Alu_eq; 
     s_Execute_memory_data_in(7)              <= i_execute_memory_register.Alu_lt;  
     s_Execute_memory_data_in(8)              <= i_execute_memory_register.Alu_ltu;
-    s_Execute_memory_data_in(9)              <= i_execute_memory_register.Alu_get; 
+    s_Execute_memory_data_in(9)              <= i_execute_memory_register.Alu_ge; 
     s_Execute_memory_data_in(10)             <= i_execute_memory_register.Alu_geu; 
-    s_Execute_memory_data_in(42 downto 11)   <= i_execute_memory_register.PC;             
+    s_Execute_memory_data_in(42 downto 11)   <= i_execute_memory_register.branch_PC;             
     s_Execute_memory_data_in(74 downto 43)   <= i_execute_memory_register.ALU_out;        
-    s_Execute_memory_data_in(106 downto 75)  <= i_execute_memory_register.DATA_TO_READ2;
+    s_Execute_memory_data_in(106 downto 75)  <= i_execute_memory_register.reg_data_2;
     s_Execute_memory_data_in(109 downto 107) <= i_execute_memory_register.func3;
-
-
+    s_Execute_memory_data_in(114 downto 110) <= i_execute_memory_register.reg_write_sel;
 
 
     Execute_memory_register_inst: N_bit_register
-        generic map(N => 110, Reset_value => (109 downto 0 => '0'))
+        generic map(N => 115, Reset_value => (114 downto 0 => '0'))
         port map(
                  i_CLK => i_clk,
                  i_RST => i_reset,                  -- reset the pipeline to 0
@@ -77,21 +77,21 @@ begin
                  i_D   => s_Execute_memory_data_in, -- all the inputs  are contained in this signal
                  o_Q   => s_Execute_memory_data_out -- all the outputs are contained in this signal
              );
-    o_execute_memory_register.RegWr         <= s_Execute_memory_data_out(0);             
+    o_execute_memory_register.reg_WE        <= s_Execute_memory_data_out(0);             
     o_execute_memory_register.branch        <= s_Execute_memory_data_out(1);             
     o_execute_memory_register.jal           <= s_Execute_memory_data_out(2);             
     o_execute_memory_register.jalr          <= s_Execute_memory_data_out(3);             
     o_execute_memory_register.ALU_mem       <= s_Execute_memory_data_out(4);             
-    o_execute_memory_register.DMemWr        <= s_Execute_memory_data_out(5);             
+    o_execute_memory_register.mem_WE        <= s_Execute_memory_data_out(5);             
     o_execute_memory_register.Alu_eq        <= s_Execute_memory_data_out(6);             
     o_execute_memory_register.Alu_lt        <= s_Execute_memory_data_out(7);             
     o_execute_memory_register.Alu_ltu       <= s_Execute_memory_data_out(8);             
-    o_execute_memory_register.Alu_get       <= s_Execute_memory_data_out(9);             
+    o_execute_memory_register.Alu_ge        <= s_Execute_memory_data_out(9);             
     o_execute_memory_register.Alu_geu       <= s_Execute_memory_data_out(10);            
-    o_execute_memory_register.PC            <= s_Execute_memory_data_out(42 downto 11);  
+    o_execute_memory_register.branch_PC     <= s_Execute_memory_data_out(42 downto 11);  
     o_execute_memory_register.ALU_out       <= s_Execute_memory_data_out(74 downto 43);  
-    o_execute_memory_register.DATA_TO_READ2 <= s_Execute_memory_data_out(106 downto 75); 
+    o_execute_memory_register.reg_data_2    <= s_Execute_memory_data_out(106 downto 75); 
     o_execute_memory_register.func3         <= s_Execute_memory_data_out(109 downto 107); 
-
+    o_execute_memory_register.reg_write_sel <= s_Execute_memory_data_out(114 downto 110);
 
 end architecture structural;
