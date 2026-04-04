@@ -1,7 +1,7 @@
--- Date        : April 2, 2026
+-- Date        : April 1, 2026
 -- File        : RISCV_Processor.vhd     
 -- Designer    : Salah Nasriddinov
--- Description : This file implements a single cycle risc-v processor 
+-- Description : This file implements a software pipelined risc-v processor 
 
 
 library IEEE;
@@ -10,7 +10,6 @@ use IEEE.std_logic_1164.all;
 library work;
 use work.RISCV_types.all;
 
--- all the external connections are used by the ToolFlow
 entity RISCV_Processor is
     generic(N : integer := 32);
     port(iCLK            : in std_logic;
@@ -27,7 +26,6 @@ architecture structure of RISCV_Processor is
 
     ----------------- COMPONENTS ---------------
 
-    -- mem component is used to infer Memory to store Instructions and Data
     component mem is
     generic(ADDR_WIDTH : integer;
             DATA_WIDTH : integer);
@@ -39,9 +37,7 @@ architecture structure of RISCV_Processor is
           q            : out std_logic_vector(31 downto 0));
     end component;
 
-    -- PC componnet is used to 
     component PC is
-        generic(Reset_value : std_logic_vector(31 downto 0));
         port(i_pc_in  : in  std_logic_vector(31 downto 0); -- new data to be written
              o_pc_out : out std_logic_vector(31 downto 0); -- pc output
              i_reset  : in  std_logic; -- reset to 0
@@ -83,6 +79,7 @@ architecture structure of RISCV_Processor is
               i_ALU_nAdd_sub : in std_logic;                       -- ALU add sub control
               i_logcl_arith  : in std_logic;                       -- is the shfit logical or arithmetic
               i_right_left   : in std_logic;                       -- is the shift to the right or left
+              i_ALU_lui      : in std_logic;                       -- mux select to chose shifted lui imm
               i_jal_or_jalr  : in std_logic;                       -- mux select that adds 0x4 to A
               o_eq           : out std_logic;
               o_lt           : out std_logic;
@@ -123,7 +120,6 @@ architecture structure of RISCV_Processor is
         port(i_alu_op      : in  std_logic_vector(1 downto 0);
              i_func3       : in  std_logic_vector(2 downto 0);
              i_func7_5     : in  std_logic;
-             i_lui         : in  std_logic; -- if lui, then just route i_B to out
              o_alu_select  : out std_logic_vector(2 downto 0); -- choose what output should chose
              o_nAdd_sub    : out std_logic; -- add subtraction flag for ALU
              o_logcl_arith : out std_logic;
@@ -148,6 +144,7 @@ architecture structure of RISCV_Processor is
           );
     end component Byte_half_word_selector;
 
+    -- This component takes ALU flags and decides if the processor should branch
     component branch_decision is
         port (
               i_eq            : in std_logic;
@@ -160,41 +157,14 @@ architecture structure of RISCV_Processor is
               o_should_branch : out std_logic);
     end component branch_decision;
 
-    -- IF_ID stage register
-    component Fetch_decode_register is
-        port(i_fetch_decode_register : in  Fetch_decode_data_t;
-             o_fetch_decode_register : out Fetch_decode_data_t;
-             i_stall                 : in std_logic;
-             i_reset                 : in std_logic;
-             i_clk                   : in std_logic); -- clock
-    end component Fetch_decode_register;
-
-    -- ID_EX stage register
-    component Decode_Execute_register is
-        port(i_decode_execute_register : in  Decode_execute_data_t;
-             o_decode_execute_register : out Decode_execute_data_t;
-             i_stall                   : in std_logic;
-             i_reset                   : in std_logic;
-             i_clk                     : in std_logic); -- clock
-    end component Decode_Execute_register;
-
-        -- EX_MEM stage register
-    component Execute_memory_register is
-        port(i_execute_memory_register : in Execute_memory_data_t;
-             o_execute_memory_register : out Execute_memory_data_t;
-             i_stall                   : in std_logic;
-             i_reset                   : in std_logic;
-             i_clk                     : in std_logic); -- clock
-    end component Execute_memory_register;
-
-        -- MEM_WB stage register
-    component Memory_wback_register is
-        port(i_memory_wback_register : in Memory_wback_data_t;
-             o_memory_wback_register : out Memory_wback_data_t;
-             i_stall                 : in std_logic;
-             i_reset                 : in std_logic;
-             i_clk                   : in std_logic); -- clock
-    end component Memory_wback_register;
+    component N_bit_register is
+        generic(N : integer; Reset_value : std_logic_vector(N-1 downto 0));
+        port(i_CLK  : in std_logic;						   -- Clock input
+           i_RST    : in std_logic;						   -- Reset input
+           i_WE     : in std_logic;   					   -- All register connected
+           i_D      : in std_logic_vector(N-1 downto 0);   -- Data value input
+           o_Q      : out std_logic_vector(N-1 downto 0)); -- Data value output
+    end component N_bit_register;   
 
 
     ----------------- SIGNALS ---------------
@@ -221,6 +191,7 @@ architecture structure of RISCV_Processor is
     -- Required overflow signal -- for overflow exception detection
     signal s_Ovfl         : std_logic;  -- overflow exception would have been initiated
 
+
     -- My Own Signal
     signal s_New_pc : std_logic_vector(31 downto 0); -- the output of the pc adder
     signal s_Next_pc: std_logic_vector(31 downto 0); -- either from pc+4 or branch
@@ -230,7 +201,7 @@ architecture structure of RISCV_Processor is
     signal s_Imm_select    : std_logic_vector(2 downto 0);  -- select with extended immediate ALU should use
     signal s_ALU_A         : std_logic_vector(31 downto 0); -- one of rs1 or PC
     signal s_ALU_B         : std_logic_vector(31 downto 0); -- one of rs2 or imm
-    signal s_lui       : std_logic;  -- signal that goes to ALU, so it routes shifted immediate directly to reg when lui
+    signal s_ALU_lui       : std_logic;  -- signal that goes to ALU, so it routes shifted immediate directly to reg when lui
     signal s_ALU_op : std_logic_vector(1 downto 0); -- ALU opcode
     signal s_ALU_src : std_logic; -- reg2 or imm
     signal s_ALU_A_src : std_logic; -- reg1 or pc
@@ -257,24 +228,87 @@ architecture structure of RISCV_Processor is
     signal s_ALU_ge  : std_logic;
     signal s_ALU_geu : std_logic;
 
-    -- Pipeline Register input outputs--
-    signal s_stall : std_logic; -- if 1, then should be stalled. For software pipelined allways 0
-    -- fetch/decode reg inputs output
-    signal s_IF_ID_input  : Fetch_decode_data_t;
-    signal s_IF_ID_output : Fetch_decode_data_t;
-    -- decode/execute reg input outputs
-    signal s_ID_EX_input  : Decode_execute_data_t;
-    signal s_ID_EX_output : Decode_execute_data_t;
-    -- execute/memory reg input outputs
-    signal s_EX_MEM_input  : Execute_memory_data_t;
-    signal s_EX_MEM_output : Execute_memory_data_t;
-    -- memory/writeback reg input outputs
-    signal s_MEM_WB_input  : Memory_wback_data_t;
-    signal s_MEM_WB_output : Memory_wback_data_t;
 
+
+    ------------ pipline related signals ----------------
+
+    signal s_stall : std_logic;  -- 1 if should be stalled (always 0 in software_piplined)
+
+    -- fetch/decode signals
+    -- 64 bits total:
+    signal s_Fetch_decode_data_in  : std_logic_vector(63 downto 0);
+    signal s_Fetch_decode_data_out : std_logic_vector(63 downto 0);
+
+    signal s_Fetch_decode_PC       : std_logic_vector(31 downto 0);
+    signal s_Fetch_decode_Inst     : std_logic_vector(31 downto 0);
+
+
+
+
+    -- decode/execute stage register
+    -- 143 bits total:
+    signal s_Decode_execute_data_in  : std_logic_vector(142 downto 0);   
+    signal s_Decode_execute_data_out : std_logic_vector(142 downto 0);   
+
+    signal s_Decode_execute_RegWr         : std_logic;  -- reg write enable signal (must)
+    signal s_Decode_execute_branch        : std_logic;
+    signal s_Decode_execute_jal           : std_logic;
+    signal s_Decode_execute_jalr          : std_logic;
+    signal s_Decode_execute_ALU_mem       : std_logic;
+    signal s_Decode_execute_ALU_src       : std_logic;
+    signal s_Decode_execute_ALU_A_src     : std_logic;
+    signal s_Decode_execute_ALU_op        : std_logic_vector(1 downto 0);
+    signal s_Decode_execute_lui           : std_logic;
+    signal s_Decode_execute_DMemWr        : std_logic; --mem write enable signal (must)
+    signal s_Decode_execute_PC            : std_logic_vector(31 downto 0);
+    signal s_Decode_execute_DATA_TO_READ1 : std_logic_vector(31 downto 0);
+    signal s_Decode_execute_DATA_TO_READ2 : std_logic_vector(31 downto 0);
+    signal s_Decode_execute_Extended_imm  : std_logic_vector(31 downto 0);
+    signal s_Decode_execute_func3         : std_logic_vector(2 downto 0);
+    signal s_Decode_execute_func7_5       : std_logic;
+
+
+
+    -- execute/memory stage register
+    -- 110 bits total:
+    signal s_Execute_memory_data_in  : std_logic_vector(109 downto 0);   
+    signal s_Execute_memory_data_out : std_logic_vector(109 downto 0);   
+
+    signal s_Execute_memory_RegWr          : std_logic;  -- reg write enable signal (must)
+    signal s_Execute_memory_branch         : std_logic;
+    signal s_Execute_memory_jal            : std_logic;
+    signal s_Execute_memory_jalr           : std_logic;
+    signal s_Execute_memory_ALU_mem        : std_logic;
+    signal s_Execute_memory_DMemWr         : std_logic; 
+    signal s_Execute_memory_Alu_eq         : std_logic; 
+    signal s_Execute_memory_Alu_lt         : std_logic; 
+    signal s_Execute_memory_Alu_ltu        : std_logic; 
+    signal s_Execute_memory_Alu_get        : std_logic; 
+    signal s_Execute_memory_Alu_geu        : std_logic; 
+    signal s_Execute_memory_PC             : std_logic_vector(31 downto 0);
+    signal s_Execute_memory_ALU_out        : std_logic_vector(31 downto 0);
+    signal s_Execute_memory_DATA_TO_READ2  : std_logic_vector(31 downto 0);
+    signal s_Execute_memory_func3          : std_logic_vector(2 downto 0);
+
+
+
+    -- memory/write-back stage register
+    -- 66 bits total:
+    signal s_Memory_wback_data_in  : std_logic_vector(65 downto 0);     
+    signal s_Memory_wback_data_out : std_logic_vector(65 downto 0);     
+
+    signal s_Memory_wback_RegWr          : std_logic;  -- reg write enable signal (must)
+    signal s_Memory_wback_ALU_mem        : std_logic;
+    signal s_Memory_wback_ALU_out        : std_logic_vector(31 downto 0);
+    signal s_Memory_wback_DMemOut        : std_logic_vector(31 downto 0);
 
 begin
     s_Ovfl <= '0'; -- RISC-V does not have hardware overflow detection.
+    -- This is required to be your final input to your instruction memory. 
+    -- This provides a feasible method to externally load the memory module which means that the synthesis tool 
+    -- must assume it knows nothing about the values stored in the instruction memory. If this is not included,
+    -- much, if not all of the design is optimized out because
+    -- the synthesis tool will believe the memory to be all zeros.
 
     -- multiplex the instruction mem address. if instructon memeory is being written then connect
     -- the address that toolflow controls, otherwise coneect the s_PC, which is current pc
@@ -282,44 +316,134 @@ begin
     s_IMemAddr <= s_PC when '0',
       iInstAddr when others;
 
-    -- IF_ID stage register
-    IF_ID_reg_inst: Fetch_decode_register 
-        port map(i_fetch_decode_register => s_IF_ID_input,
-                 o_fetch_decode_register => s_IF_ID_output,
-                 i_stall                 => s_stall,
-                 i_reset                 => iRST,  
-                 i_clk                   => iCLK   
-        );
+    -- fetch/decode signals
+    -- 64 bits total:
+    -- PC      : current PC (32 bits) (31 downto 0)
+    -- Inst    : instruction (32 bits) (63 downto 32)
+    IF_ID_register: N_bit_register 
+        generic map(N => 64,
+                    Reset_value => (others => '0'))
+        port map(i_CLK => iCLK, 			          -- Clock input
+                 i_RST => iRST,                       -- Reset input
+                 i_WE  => not s_stall,                -- write if we are not stalling it 
+                 i_D   => s_Fetch_decode_data_in,     -- fetch pipeline register data input
+                 o_Q   => s_Fetch_decode_data_out);   -- fetch pipleine register data output
 
-    -- ID_EX stage register
-    ID_EX_reg_inst: Decode_Execute_register
-        port map(i_decode_execute_register => s_ID_EX_input,
-                  o_decode_execute_register => s_ID_EX_output,
-                  i_stall                   => s_stall,
-                  i_reset                   => iRST,  
-                  i_clk                     => iCLK   
-        );
+    s_Fetch_decode_data_in(31 downto 0)  <= s_Fetch_decode_PC;
+    s_Fetch_decode_data_in(62 downto 32) <= s_Fetch_decode_Inst;
 
-    -- EX_MEM stage register
-    EX_MEM_reg_inst: Execute_memory_register
-        port map(i_execute_memory_register => s_EX_MEM_input,
-                 o_execute_memory_register => s_EX_MEM_output,
-                 i_stall                   => s_stall,
-                 i_reset                   => iRST,  
-                 i_clk                     => iCLK   
-        );
 
-    -- MEM_WB stage register
-    MEM_WB_reg_inst: Memory_wback_register
-        port map(i_memory_wback_register => s_MEM_WB_input,
-                 o_memory_wback_register => s_MEM_WB_output,
-                 i_stall                 => s_stall,
-                 i_reset                 => iRST,  
-                 i_clk                   => iCLK   
-        );
+    -- decode/execute stage register
+    -- 149 bits total:
+    -- Control : REG_WE (0)
+    -- Control : branch (1)
+    -- Control : jal    (2)
+    -- Control : jalr   (3)
+    -- Control : ALU/Mem (4)
+    -- Control : ALU_src (5)
+    -- Control : ALU_A_src (6)
+    -- Control : ALU_op (2 bits) (8 downto 7)
+    -- Control : lui       (9)
+    -- Control : mem_WE    (10)
+    -- PC      : current PC (32 bits) (42 downto 11)
+    -- DATA    : read 1 (32 bits)     (74 downto 43)
+    -- DATA    : read 2 (32 bits)     (106 downto 75)
+    -- DATA    : extended_imm (32 bits) (138 downto 107)
+    -- Inst    : func3(3 bits) (141 downto 139)
+    -- Inst    : func7_5        (142)
 
-    -- Instruction memory is filled out by toolflow
-    IMem: mem 
+    ID_EX_register: N_bit_register 
+        generic map(N => 149,
+                    Reset_value => (others => '0'))
+        port map(i_CLK => iCLK,                       -- Clock input
+                 i_RST => iRST,                       -- Reset input
+                 i_WE  => not s_stall,                -- write if we are not stalling it 
+                 i_D   => s_Decode_execute_data_in,  
+                 o_Q   => s_Decode_execute_data_out);
+
+    s_Decode_execute_data_in(0)              <=  s_Decode_execute_RegWr;
+    s_Decode_execute_data_in(1)              <=  s_Decode_execute_branch;
+    s_Decode_execute_data_in(2)              <=  s_Decode_execute_jal;
+    s_Decode_execute_data_in(3)              <=  s_Decode_execute_jalr;
+    s_Decode_execute_data_in(4)              <=  s_Decode_execute_ALU_mem;
+    s_Decode_execute_data_in(5)              <=  s_Decode_execute_ALU_src;
+    s_Decode_execute_data_in(6)              <=  s_Decode_execute_ALU_A_src;
+    s_Decode_execute_data_in(8 downto 7)     <=  s_Decode_execute_ALU_op;
+    s_Decode_execute_data_in(9)              <=  s_Decode_execute_lui;
+    s_Decode_execute_data_in(10)             <=  s_Decode_execute_DMemWr;
+    s_Decode_execute_data_in(42 downto 11)   <=  s_Decode_execute_PC;
+    s_Decode_execute_data_in(74 downto 43)   <=  s_Decode_execute_DATA_TO_READ1;
+    s_Decode_execute_data_in(106 downto 75)  <=  s_Decode_execute_DATA_TO_READ2;
+    s_Decode_execute_data_in(138 downto 107) <=  s_Decode_execute_Extended_imm;
+    s_Decode_execute_data_in(141 downto 139) <=  s_Decode_execute_func3;
+    s_Decode_execute_data_in(142)            <=  s_Decode_execute_func7_5;
+
+
+    -- execute/memory stage register
+    -- 109 bits total:
+    -- Control : REG_WE (0)
+    -- Control : branch (1)
+    -- Control : jal    (2)
+    -- Control : jalr   (3)
+    -- Control : ALU/Mem (4)
+    -- Control : mem_WE  (5)
+    -- ALU_FLG : Alu_eq (6)
+    -- ALU_FLG : Alu_lt (7)
+    -- ALU_FLG : Alu_ltu(8)
+    -- ALU_FLG : Alu_get(9)
+    -- ALU_FLG : Alu_geu(10)
+    -- PC      : New branc PC (32 bits) (42 downto 11)
+    -- DATA    : ALU_out (32 bits)      (74 downto 43)
+    -- DATA    : read 2 (32 bits)       (106 downto 75)
+    -- Inst    : func3 (3 bits)         (109 downto 107)
+    EX_MEM_register: N_bit_register 
+        generic map(N => 110,
+                    Reset_value => (others => '0'))
+        port map(i_CLK => iCLK, 			         -- Clock input
+                 i_RST => iRST,                      -- Reset input
+                 i_WE  => not s_stall,               -- write if we are not stalling it 
+                 i_D   => s_Execute_memory_data_in,   
+                 o_Q   => s_Execute_memory_data_out); 
+
+    s_Execute_memory_data_in(0)              <= s_Execute_memory_RegWr;          
+    s_Execute_memory_data_in(1)              <= s_Execute_memory_branch;        
+    s_Execute_memory_data_in(2)              <= s_Execute_memory_jal;            
+    s_Execute_memory_data_in(3)              <= s_Execute_memory_jalr;           
+    s_Execute_memory_data_in(4)              <= s_Execute_memory_ALU_mem;        
+    s_Execute_memory_data_in(5)              <= s_Execute_memory_DMemWr;         
+    s_Execute_memory_data_in(6)              <= s_Execute_memory_DMemWr_Alu_eq; 
+    s_Execute_memory_data_in(7)              <= s_Execute_memory_DMemWr_Alu_lt;  
+    s_Execute_memory_data_in(8)              <= s_Execute_memory_DMemWr_Alu_ltu;
+    s_Execute_memory_data_in(9)              <= s_Execute_memory_DMemWr_Alu_get; 
+    s_Execute_memory_data_in(10)             <= s_Execute_memory_DMemWr_Alu_geu; 
+    s_Execute_memory_data_in(42 downto 11)   <= s_Execute_memory_PC;             
+    s_Execute_memory_data_in(74 downto 43)   <= s_Execute_memory_ALU_out;        
+    s_Execute_memory_data_in(106 downto 75)  <= s_Execute_memory_DATA_TO_READ2;
+    s_Execute_memory_data_in(109 downto 107) <= s_Execute_memory_func3;
+
+
+    -- memory/write-back stage register
+    -- 66 bits total:
+    -- Control : REG_WE  (0)
+    -- Control : ALU/Mem (1)
+    -- DATA    : ALU_out (32 bits) (33 downto 2)
+    -- DATA    : MEM_out (32 bits) (65 downto 34)
+    MEM_WB_register: N_bit_register 
+        generic map(N => 66,
+                    Reset_value => (others => '0'))
+        port map(i_CLK => iCLK, 			          -- Clock input
+                 i_RST => iRST,                       -- Reset input
+                 i_WE  => not s_stall,                -- write if we are not stalling it 
+                 i_D   => s_Memory_wback_data_in,   
+                 o_Q   => s_Memory_wback_data_out); 
+
+    s_Memory_wback_data_in(0)            <= s_Memory_wback_RegWr;
+    s_Memory_wback_data_in(1)            <= s_Memory_wback_ALU_mem;
+    s_Memory_wback_data_in(33 downto 2)  <= s_Memory_wback_ALU_out;
+    s_Memory_wback_data_in(65 downto 34) <= s_Memory_wback_DMemOut;
+
+
+    IMem: mem -- Instruction memory is filled out by toolflow
         generic map(ADDR_WIDTH => 10,
                     DATA_WIDTH => 32)
         port map(clk  => iCLK,
@@ -330,8 +454,7 @@ begin
 
     s_DMemData <= s_DATA_TO_READ2;
     s_DMemAddr <= s_ALU_out; 
-    oALUOut    <= s_ALU_out;
-    s_RegWrAddr <= s_Inst(11 downto 7); -- Write address from instruction
+    oALUOut    <= s_ALU_out; -- so it doesn't optimize it
 
     DMem: mem
         generic map(ADDR_WIDTH => 10,
@@ -343,7 +466,6 @@ begin
                  q    => s_DMemOut);
 
     PC_inst: PC
-        generic map(Reset_value => 32x"00400000")
         port map(
                  i_pc_in  => s_Next_pc, -- connect pc_in to pc_adder out
                  o_pc_out => s_PC, --must
@@ -352,16 +474,17 @@ begin
 
     PC_adder_inst: PC_adder
         port map(
-                 i_current_pc => s_PC,      --must
+                 i_current_pc => s_PC, --must
                  o_new_pc     => s_New_pc); -- connect the output of the pc to s_New_pc
 
+    s_RegWrAddr <= s_Inst(11 downto 7); -- Write address from instruction
     Register_file_inst: Register_file
         port map(
-                 CLOCK_IN          => iCLK,                 -- must
-                 DATA_TO_WRITE_IN  => s_RegWrData,          -- must
-                 WRITE_EN_IN       => s_RegWr,              -- must
-                 REG_RST_IN        => iRST,                 -- must
-                 WRITE_SEL_IN      => s_RegWrAddr,          -- must
+                 CLOCK_IN          => iCLK, --must
+                 DATA_TO_WRITE_IN  => s_RegWrData, -- must
+                 WRITE_EN_IN       => s_RegWr, -- must
+                 REG_RST_IN        => iRST, --must
+                 WRITE_SEL_IN      => s_RegWrAddr, -- must
                  READ_SEL1_IN      => s_Inst(19 downto 15), -- must 
                  READ_SEL2_IN      => s_Inst(24 downto 20), -- must
                  DATA_TO_READ1_OUT => s_DATA_TO_READ1,
@@ -375,14 +498,14 @@ begin
                  o_Imm_select  => s_Imm_select,
                  o_ALU_A_src   => s_ALU_A_src,
                  o_ALU_src     => s_ALU_src,
-                 o_mem_WE      => s_DMemWr,  --must
+                 o_mem_WE      => s_DMemWr, --must
                  o_ALU_mem     => s_ALU_mem,
-                 o_reg_file_WE => s_RegWr,   -- must
-                 o_lui         => s_lui,     -- chose shifter lui imm over ALU output
+                 o_reg_file_WE => s_RegWr, -- must
+                 o_lui         => s_ALU_lui, -- chose shifter lui imm over ALU output
                  o_branch      => s_branch,
                  o_jal         => s_jal,
                  o_jalr        => s_jalr,
-                 o_halt        => s_Halt     --must
+                 o_halt        => s_Halt --must
             );
 
 
@@ -390,12 +513,11 @@ begin
         port map(
                  i_alu_op      => s_ALU_op,
                  i_func3       => s_Inst(14 downto 12), -- must 
-                 i_func7_5     => s_Inst(30),           --must
-                 i_lui         => s_lui,                -- lui control signal coming from main control
-                 o_alu_select  => s_ALU_select,         -- ALU mux select
-                 o_nAdd_sub    => s_ALU_nAdd_sub,       -- add sub flag
-                 o_logcl_arith => s_logcl_arith,        -- this is logical or arithmetic flag
-                 o_right_left  => s_right_left          -- this is the right of left shift flag
+                 i_func7_5     => s_Inst(30), --must
+                 o_alu_select  => s_ALU_select, -- ALU mux select
+                 o_nAdd_sub    => s_ALU_nAdd_sub, -- add sub flag
+                 o_logcl_arith => s_logcl_arith,  -- this is logical or arithmetic flag
+                 o_right_left  => s_right_left    -- this is the right of left shift flag
                  );
 
 
@@ -426,19 +548,20 @@ begin
 
     ALU_inst: ALU
         port map( 
-                 i_A            => s_ALU_A,        -- either rs1 or pc 
-                 i_B            => s_ALU_B,        -- either rs2 or imm
-                 i_ALU_select   => s_ALU_select,   -- which component's output should ALU output. 3 bit select
+                 i_A            => s_ALU_A, -- either rs1 or pc 
+                 i_B            => s_ALU_B, -- either rs2 or imm
+                 i_ALU_select   => s_ALU_select, -- which component's output should ALU output. 3 bit select
                  i_ALU_nAdd_sub => s_ALU_nAdd_sub,
-                 i_logcl_arith  => s_logcl_arith,  -- is the shfit logical or arithmetic
-                 i_right_left   => s_right_left,   -- is the shift to the right or left
+                 i_logcl_arith  => s_logcl_arith,                       -- is the shfit logical or arithmetic
+                 i_right_left   => s_right_left,                    -- is the shift to the right or left
+                 i_ALU_lui      => s_ALU_lui, -- should we route imm << 12 directly to reg
                  i_jal_or_jalr  => s_jal or s_jalr,
                  o_eq           => s_ALU_eq,
                  o_lt           => s_ALU_lt,
                  o_ltu          => s_ALU_ltu,
                  o_ge           => s_ALU_ge,
                  o_geu          => s_ALU_geu,
-                 o_ALU_out      => s_ALU_out       -- must, because ALU out is also connected to Dmem Addr
+                 o_ALU_out      => s_ALU_out --must, because ALU out is also connected to Dmem Addr
              ); 
 
     -- selects the appropriate slice or all of the word depending on lb, lh or lw
@@ -454,10 +577,9 @@ begin
             generic map(N => 32)
             port map(
                      i_S  => s_ALU_mem,
-                     i_D0 => s_ALU_out, 
+                     i_D0 => s_ALU_out, --change its name and assign DMemData to that because now confusing
                      i_D1 => s_selected_mem_data, --must
-                     o_O  => s_RegWrData          --must
-            ); 
+                     o_O  => s_RegWrData); --must
 
     branch_brain: branch_decision 
         port map(
@@ -475,7 +597,7 @@ begin
             generic map(N => 32)
             port map(
                      i_S  => s_jalr,
-                     i_D0 => s_PC, 
+                     i_D0 => s_PC, --changed
                      i_D1 => s_DATA_TO_READ1,
                      o_O  => s_branch_pc_addr_input_A);
 
@@ -484,14 +606,17 @@ begin
         port map(x    => s_Extended_imm,  
                  y    => s_branch_pc_addr_input_A,  -- add pc to immedaite
                  c_in => '0',  
-                 sum  => s_branch_pc_addr);         -- outputs is +1 of inputs
+                 sum  => s_branch_pc_addr); -- outputs is +1 of inputs
 
     Mux2t1_N_Bnst:  mux2t1_N_dataflow
             generic map(N => 32)
             port map(
                      i_S  => s_should_branch or s_jal or s_jalr,
-                     i_D0 => s_New_pc, 
+                     i_D0 => s_New_pc, --change its name and assign DMemData to that because now confusing
                      i_D1 => s_branch_pc_addr, --must
-                     o_O  => s_Next_pc);       --must
+                     o_O  => s_Next_pc); --must
+    -- s_Halt is connected to an output control from decoding the Halt instruction (Opcode: 01 0100)
+
 
 end structure;
+
