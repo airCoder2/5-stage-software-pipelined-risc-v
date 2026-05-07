@@ -1,0 +1,61 @@
+
+#
+# CprE 381 toolflow Timing dump
+#
+
+FMax: 62.85mhz Clk Constraint: 20.00ns Slack: 4.09ns
+
+The path is given below
+
+ ===================================================================
+ From Node    : Decode_Execute_register:ID_EX_reg_inst|N_bit_register:Decode_execute_register_inst|one_bit_register:\N_Registers:2:register_i|d_flip_flop:dff|s_Q
+ To Node      : Execute_memory_register:EX_MEM_reg_inst|N_bit_register:Execute_memory_register_inst|one_bit_register:\N_Registers:5:register_i|d_flip_flop:dff|s_Q
+ Launch Clock : iCLK
+ Latch Clock  : iCLK
+ Data Arrival Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+      0.000      0.000           launch edge time
+      3.481      3.481  R        clock network delay
+      3.713      0.232     uTco  Decode_Execute_register:ID_EX_reg_inst|N_bit_register:Decode_execute_register_inst|one_bit_register:\N_Registers:2:register_i|d_flip_flop:dff|s_Q
+      3.713      0.000 FF  CELL  ID_EX_reg_inst|Decode_execute_register_inst|\N_Registers:2:register_i|dff|s_Q|q
+      6.525      2.812 FF    IC  ALU_inst|Adder_subtractor_inst|B_eff[6]|datac
+      6.806      0.281 FF  CELL  ALU_inst|Adder_subtractor_inst|B_eff[6]|combout
+      9.092      2.286 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:1:u_cla|c_out~3|datad
+      9.217      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:1:u_cla|c_out~3|combout
+      9.453      0.236 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:1:u_cla|G_grp~1|datac
+      9.734      0.281 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:1:u_cla|G_grp~1|combout
+      9.991      0.257 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:2:u_cla|c_out~2|datac
+     10.271      0.280 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:2:u_cla|c_out~2|combout
+     11.000      0.729 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:3:u_cla|c_out~2|datad
+     11.125      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:3:u_cla|c_out~2|combout
+     11.397      0.272 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:4:u_cla|c_out~2|datad
+     11.522      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:4:u_cla|c_out~2|combout
+     12.148      0.626 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|c1~1|datad
+     12.273      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|c1~1|combout
+     12.500      0.227 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|c1~2|datad
+     12.625      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|c1~2|combout
+     15.172      2.547 FF    IC  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|S1|datad
+     15.297      0.125 FF  CELL  ALU_inst|Adder_subtractor_inst|\gen_blocks:6:u_cla|S1|combout
+     17.595      2.298 FF    IC  ALU_inst|result~8|datad
+     17.720      0.125 FF  CELL  ALU_inst|result~8|combout
+     17.949      0.229 FF    IC  ALU_inst|result~12|datad
+     18.074      0.125 FF  CELL  ALU_inst|result~12|combout
+     18.304      0.230 FF    IC  ALU_inst|result~13|datad
+     18.429      0.125 FF  CELL  ALU_inst|result~13|combout
+     18.657      0.228 FF    IC  ALU_inst|result~14|datad
+     18.807      0.150 FR  CELL  ALU_inst|result~14|combout
+     18.807      0.000 RR    IC  EX_MEM_reg_inst|Execute_memory_register_inst|\N_Registers:5:register_i|dff|s_Q|d
+     18.894      0.087 RR  CELL  Execute_memory_register:EX_MEM_reg_inst|N_bit_register:Execute_memory_register_inst|one_bit_register:\N_Registers:5:register_i|d_flip_flop:dff|s_Q
+ Data Required Path:
+ Total (ns)  Incr (ns)     Type  Element
+ ==========  ========= ==  ====  ===================================
+     20.000     20.000           latch edge time
+     22.954      2.954  R        clock network delay
+     22.986      0.032           clock pessimism removed
+     22.966     -0.020           clock uncertainty
+     22.984      0.018     uTsu  Execute_memory_register:EX_MEM_reg_inst|N_bit_register:Execute_memory_register_inst|one_bit_register:\N_Registers:5:register_i|d_flip_flop:dff|s_Q
+ Data Arrival Time  :    18.894
+ Data Required Time :    22.984
+ Slack              :     4.090
+ ===================================================================
